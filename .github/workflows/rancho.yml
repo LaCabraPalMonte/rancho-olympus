@@ -1,0 +1,36 @@
+# Copiar a .github/workflows/rancho.yml del repositorio del rancho.
+name: Actualizar rancho
+
+on:
+  schedule:
+    - cron: "0 5 * * *"   # Todos los dias a las 05:00 UTC
+  workflow_dispatch:       # Boton "Run workflow" para lanzarlo a mano
+
+permissions:
+  contents: write
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Consultar Patreon y Twitch
+        env:
+          PATREON_TOKEN: ${{ secrets.PATREON_TOKEN }}
+          PATREON_CAMPAIGN_ID: ${{ secrets.PATREON_CAMPAIGN_ID }}
+          TWITCH_CLIENT_ID: ${{ secrets.TWITCH_CLIENT_ID }}
+          TWITCH_CLIENT_SECRET: ${{ secrets.TWITCH_CLIENT_SECRET }}
+          TWITCH_REFRESH_TOKEN: ${{ secrets.TWITCH_REFRESH_TOKEN }}
+        run: python3 actualizar_rancho.py
+
+      # Tambien si ha fallado una plataforma: las demas si se han actualizado y
+      # las de la que falla se conservan. La ejecucion sale en rojo igualmente
+      # y GitHub avisa por correo.
+      - name: Publicar si ha cambiado
+        if: success() || failure()
+        run: |
+          git config user.name "rancho-bot"
+          git config user.email "rancho-bot@users.noreply.github.com"
+          git add rancho.txt
+          git diff --cached --quiet || (git commit -m "Actualizar rancho" && git push)
