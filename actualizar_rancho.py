@@ -193,12 +193,14 @@ def twitch():
     # Twitch no dice desde cuando esta suscrito cada uno: miembro_desde se
     # queda vacio y al juntar pasa a ser el dia en que llego al rancho.
     filas = []
+    en_api = 0
     cursor = None
     while True:
         parametros = {"broadcaster_id": canal, "first": 100}
         if cursor:
             parametros["after"] = cursor
         pagina = pedir(API_TWITCH + "/subscriptions?" + urllib.parse.urlencode(parametros), cabeceras)
+        en_api += len(pagina["data"])
         for sub in pagina["data"]:
             if sub["user_id"] == canal:   # El propio canal sale como suscriptor
                 continue
@@ -209,6 +211,9 @@ def twitch():
                 filas.append(fila("TWITCH", sub["user_id"], sub.get("user_name") or sub["user_login"], tier))
         cursor = pagina.get("pagination", {}).get("cursor")
         if not cursor or not pagina["data"]:
+            # Para entender un 0: cuantas da Twitch antes de quitar el propio
+            # canal, las regaladas (si no cuentan) y los niveles sin tier
+            print("TWITCH: %d subs en la API, %d entran en el rancho" % (en_api, len(filas)))
             return filas
 
 
