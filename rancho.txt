@@ -1,0 +1,2 @@
+# RANCHO v1
+# id|nick|tier|miembro_desde|rancho_desde|especie|shiny|zona|origen
