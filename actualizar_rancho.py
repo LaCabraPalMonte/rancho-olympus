@@ -30,6 +30,7 @@ import json
 import os
 import re
 import sys
+import urllib.error
 import urllib.parse
 import urllib.request
 
@@ -65,8 +66,13 @@ def pedir(url, cabeceras, datos=None):
     if datos is not None:
         datos = urllib.parse.urlencode(datos).encode()
     peticion = urllib.request.Request(url, data=datos, headers=cabeceras)
-    with urllib.request.urlopen(peticion, timeout=30) as respuesta:
-        return json.load(respuesta)
+    try:
+        with urllib.request.urlopen(peticion, timeout=30) as respuesta:
+            return json.load(respuesta)
+    except urllib.error.HTTPError as e:
+        # El cuerpo dice el motivo ("Invalid refresh token"...); nunca lleva los secretos
+        motivo = e.read().decode("utf-8", "replace")[:300]
+        raise RuntimeError("HTTP %d en %s: %s" % (e.code, url.split("?")[0], motivo)) from None
 
 
 def limpiar(texto, largo=None):
